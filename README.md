@@ -15,6 +15,13 @@ cd dezsys-gk71-floodmonitor-rest
 ./gradlew bootRun
 ```
 
+Auf macOS bei mehreren installierten JDKs vor den Gradle-Befehlen ausdrücklich Java 17 auswählen:
+
+```sh
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export PATH="$JAVA_HOME/bin:$PATH"
+```
+
 Unter Windows: `gradlew.bat test` und `gradlew.bat bootRun`.
 
 - Webclient: <http://localhost:8080/>
