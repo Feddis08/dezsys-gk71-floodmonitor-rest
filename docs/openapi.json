@@ -1,0 +1,999 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Floodmonitor API",
+    "description": "Public read-only flood monitoring API. No authentication is required. Only GET endpoints are provided; no administrative writes. No permissive CORS. Accept application/json (default) or application/xml. XML lists use <stations><station>…</station></stations> and <measurements><measurement>…</measurement></measurements>. Water levels are cm, flow m³/s, rainfall mm/h, temperature °C and battery %. NORMAL below warning threshold, WARNING from warning threshold, CRITICAL from critical threshold. UNKNOWN for missing, invalid, inactive, offline, future or stale current data; historical values are classified at measurement time. History is bounded by history.capacity (default 1000 per station).",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8873",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [],
+  "paths": {
+    "/api/v1/stations": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "List stations",
+        "description": "Filter by river, activity and current server-computed warning level. JSON array or XML stations/station list.",
+        "operationId": "stations",
+        "parameters": [
+          {
+            "name": "river",
+            "in": "query",
+            "description": "Optional case-insensitive exact river name, e.g. Donau",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "description": "Optional literal true or false; other values return 400",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "warningLevel",
+            "in": "query",
+            "description": "Optional enum NORMAL, WARNING, CRITICAL, UNKNOWN. Alerts include only current WARNING/CRITICAL",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NORMAL",
+                "WARNING",
+                "CRITICAL",
+                "UNKNOWN"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Station"
+                  }
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Station"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stations/{stationId}": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "Get a station",
+        "description": "Thresholds in cm and geographic latitude/longitude in degrees.",
+        "operationId": "station",
+        "parameters": [
+          {
+            "name": "stationId",
+            "in": "path",
+            "description": "Station identifier, e.g. ST-001; unknown IDs return 404",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Station"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Station"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stations/{stationId}/statistics": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "Statistics over retained measurements",
+        "description": "Inclusive from/to window, valid readings only. Empty windows have null extrema/averages, zero counts/sum. totalRainfall is the sum of mm/h readings, not integrated rainfall. warningCount excludes criticalCount.",
+        "operationId": "statistics",
+        "parameters": [
+          {
+            "name": "stationId",
+            "in": "path",
+            "description": "Station identifier, e.g. ST-001; unknown IDs return 404",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Optional inclusive ISO-8601 instant, e.g. 2026-05-01T08:00:00Z",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Optional inclusive ISO-8601 instant, must be greater than or equal to from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Statistics"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Statistics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stations/{stationId}/measurements": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "Measurement history",
+        "description": "Inclusive from/to window, newest first, filtered before limit. Historical warning is not invalidated by present age. JSON array or XML measurements/measurement list.",
+        "operationId": "history",
+        "parameters": [
+          {
+            "name": "stationId",
+            "in": "path",
+            "description": "Station identifier, e.g. ST-001; unknown IDs return 404",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Optional inclusive ISO-8601 instant, e.g. 2026-05-01T08:00:00Z",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Optional inclusive ISO-8601 instant, must be greater than or equal to from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum returned readings, 1..1000 (default 100), newest first; applied after filters",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 100
+            }
+          },
+          {
+            "name": "warningLevel",
+            "in": "query",
+            "description": "Optional enum NORMAL, WARNING, CRITICAL, UNKNOWN. Alerts include only current WARNING/CRITICAL",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NORMAL",
+                "WARNING",
+                "CRITICAL",
+                "UNKNOWN"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Measurement"
+                  }
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Measurement"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stations/{stationId}/measurements/latest": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "Latest retained measurement",
+        "description": "Current warning recalculated on every read; stale data is UNKNOWN. 404 if no measurement exists.",
+        "operationId": "latest",
+        "parameters": [
+          {
+            "name": "stationId",
+            "in": "path",
+            "description": "Station identifier, e.g. ST-001; unknown IDs return 404",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Measurement"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Measurement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "tags": [
+          "station-controller"
+        ],
+        "summary": "Current flood alerts",
+        "description": "Latest WARNING or CRITICAL reading per active station, excluding stale/invalid/offline data. Optional river and warning filters. JSON array or XML measurements/measurement list.",
+        "operationId": "alerts",
+        "parameters": [
+          {
+            "name": "river",
+            "in": "query",
+            "description": "Optional case-insensitive exact river name, e.g. Donau",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "warningLevel",
+            "in": "query",
+            "description": "Optional enum NORMAL, WARNING, CRITICAL, UNKNOWN. Alerts include only current WARNING/CRITICAL",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NORMAL",
+                "WARNING",
+                "CRITICAL",
+                "UNKNOWN"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Measurement"
+                  }
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Measurement"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameter, date, enum, boolean, range or limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Station, measurement or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Read-only API: method not allowed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Unsupported Accept; structured error falls back to JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error without stack trace or implementation details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Location": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "Station": {
+        "type": "object",
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "river": {
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "normalWaterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "warningWaterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "criticalWaterLevel": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "Statistics": {
+        "type": "object",
+        "properties": {
+          "stationId": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "measurementCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minWaterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxWaterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "averageWaterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "averageFlowRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalRainfall": {
+            "type": "number",
+            "format": "double"
+          },
+          "warningCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "criticalCount": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "Inclusive time window over retained valid measurements. Water: cm, flow: m³/s. totalRainfall is the sum of rainfall readings (mm/h), not integrated precipitation. Warning and critical counts are disjoint. Empty windows return null extrema/averages and zero counts/sum."
+      },
+      "Measurement": {
+        "type": "object",
+        "properties": {
+          "stationId": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "waterLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "flowRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "rainfall": {
+            "type": "number",
+            "format": "double"
+          },
+          "temperature": {
+            "type": "number",
+            "format": "double"
+          },
+          "batteryLevel": {
+            "type": "number",
+            "format": "double"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "MAINTENANCE",
+              "OFFLINE"
+            ]
+          },
+          "warningLevel": {
+            "type": "string",
+            "enum": [
+              "NORMAL",
+              "WARNING",
+              "CRITICAL",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
