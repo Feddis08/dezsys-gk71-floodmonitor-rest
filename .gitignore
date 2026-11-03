@@ -1,0 +1,9 @@
+# Gradle outputs and local settings
+.gradle/
+build/
+.idea/
+*.iml
+.DS_Store
+.env
+*.log
+node_modules/
