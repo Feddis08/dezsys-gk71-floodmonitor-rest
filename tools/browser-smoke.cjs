@@ -1,0 +1,66 @@
+'use strict';
+// Optionaler Browser-Smoketest: npm install, npx playwright install chromium, npm run test:browser
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1100 }, timezoneId: 'Europe/Vienna' });
+  const failures = [], checks = [], api = [];
+  page.on('pageerror', e => failures.push(e.message));
+  page.on('response', r => { if (r.url().includes('/api/v1/')) api.push({ url:r.url(),status:r.status(),type:r.headers()['content-type'] }); });
+  const check = (name, condition) => { assert.ok(condition, name);checks.push(name); };
+  const base = process.env.BASE_URL || 'http://127.0.0.1:8080';
+  const ready = () => page.waitForFunction(() => document.querySelector('#history tr') && document.querySelector('#loading').hidden);
+  fs.mkdirSync('docs/screenshots', { recursive: true });
+  try {
+    await page.goto(base); await ready();
+    await page.uncheck('#automatic');
+    check('Drei Stationen geladen', await page.locator('#station option').count() >= 3);
+    check('Aktueller Wert vorhanden', await page.locator('#latest dd').count() === 9);
+    check('Wasserstand in cm', (await page.locator('thead').innerText()).includes('(cm)'));
+    const jsonCells = await page.locator('#history tr').first().locator('td').allTextContents();
+    check('Neun Tabellenspalten', jsonCells.length === 9);
+    await page.screenshot({path:'docs/screenshots/webclient-json.png',fullPage:true});
+    await page.selectOption('#format','xml'); await ready();
+    const xmlCells = await page.locator('#history tr').first().locator('td').allTextContents();
+    check('XML parsed same station', xmlCells[0] === jsonCells[0]);
+    check('XML enthält Messwerte und Status', xmlCells[2] !== '–' && ['NORMAL','WARNING','CRITICAL','UNKNOWN'].includes(xmlCells[8]));
+    check('Echte XML-HTTP-Antworten', api.some(r => r.type?.includes('application/xml')));
+    await page.screenshot({path:'docs/screenshots/webclient-xml.png',fullPage:true});
+    await page.selectOption('#station','ST-003'); await ready();
+    await page.selectOption('#warning','CRITICAL'); await ready();
+    check('Warnstufenfilter', (await page.locator('#history tr td:last-child').allTextContents()).every(s=>s==='CRITICAL'));
+    const from = new Date(Date.now()-3600000).toISOString();
+    const to = new Date(Date.now()+3600000).toISOString();
+    await page.evaluate(({from,to})=>{
+      const local=s=>{const d=new Date(s);return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,19);};
+      document.querySelector('#from').value=local(from);document.querySelector('#to').value=local(to);
+    },{from,to});
+    await page.locator('#filters button').click(); await ready();
+    check('Zeitraum als UTC gesendet',api.some(r=>r.url.includes('from=')&&r.url.includes('to=')));
+    await page.locator('#limit').fill('1'); await page.locator('#filters button').click();await ready();
+    check('Limit im Client',await page.locator('#history tr').count()===1);
+    await page.locator('#from').fill('2030-01-02T12:00');
+    await page.locator('#to').fill('2020-01-01T12:00');
+    await page.locator('#filters button').click();
+    check('Ungültiger Zeitraum sichtbar',await page.locator('#filter-error').isVisible());
+    await page.screenshot({path:'docs/screenshots/webclient-validation.png',fullPage:true});
+    await page.locator('#from').fill(''); await page.locator('#to').fill('');
+    await page.selectOption('#warning',''); await ready();
+    await page.route('**/api/v1/stations/ST-003/measurements?*',route=>route.fulfill({status:400,contentType:'application/xml',body:'<error><message>Testfehler der API</message></error>'}));
+    await page.locator('#refresh').click();
+    await page.waitForFunction(()=>document.querySelector('#history-error').textContent.includes('Testfehler der API'));
+    check('XML-Serverfehler lesbar',await page.locator('#history-error').isVisible());
+    await page.unroute('**/api/v1/stations/ST-003/measurements?*');
+    await page.locator('#refresh').click();await ready();
+    const before=api.length;
+    await page.locator('#interval').fill('1');await page.locator('#interval').dispatchEvent('change');
+    await page.check('#automatic');
+    await page.waitForTimeout(2200);await page.uncheck('#automatic');
+    check('Periodisches Aktualisieren',api.length>before+1);
+    check('Keine JavaScript-Fehler',failures.length===0);
+    const result={checks,failures,apiResponses:api.length};
+    fs.writeFileSync('build/browser-smoke.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));
+  } finally { await browser.close(); }
+})().catch(e=>{console.error(e);process.exitCode=1;});

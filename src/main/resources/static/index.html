@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hochwasser-Messstationen</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/jquery-3.7.1.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<main>
+  <h1>Hochwasser-Messstationen</h1>
+  <section aria-labelledby="settings-title">
+    <h2 id="settings-title">Station und Aktualisierung</h2>
+    <div class="controls">
+      <div><label for="station">Messstation</label><select id="station" disabled><option value="">Stationen werden geladen …</option></select></div>
+      <div><label for="format">Datenformat (Accept)</label><select id="format"><option value="json">JSON</option><option value="xml">XML</option></select></div>
+      <div><label for="interval">Intervall in Sekunden</label><input id="interval" type="number" min="1" max="3600" step="1" value="10"></div>
+      <div class="checkbox"><input id="automatic" type="checkbox" checked><label for="automatic">Automatisch aktualisieren</label></div>
+      <button id="refresh" type="button">Jetzt aktualisieren</button>
+    </div>
+    <p id="station-details">Noch keine Station ausgewählt.</p>
+    <p id="station-message" role="status" aria-live="polite"></p>
+    <p id="station-error" class="error" role="alert" hidden></p>
+    <p id="loading" role="status" aria-live="polite" hidden>Daten werden geladen …</p>
+    <p id="updated">Noch keine Aktualisierung.</p>
+    <p id="settings-error" class="error" role="alert" hidden></p>
+  </section>
+  <section aria-labelledby="latest-title">
+    <h2 id="latest-title">Letzte Messung</h2>
+    <p id="latest-message" role="status">Noch keine Messung geladen.</p>
+    <p id="latest-error" class="error" role="alert" hidden></p>
+    <dl id="latest" class="latest" hidden></dl>
+  </section>
+  <section aria-labelledby="history-title">
+    <h2 id="history-title">Messhistorie</h2>
+    <form id="filters">
+      <div class="controls">
+        <div><label for="from">Von (lokale Zeit)</label><input id="from" type="datetime-local" step="1"></div>
+        <div><label for="to">Bis (lokale Zeit)</label><input id="to" type="datetime-local" step="1"></div>
+        <div><label for="warning">Warnstufe</label><select id="warning"><option value="">Alle</option><option>NORMAL</option><option>WARNING</option><option>CRITICAL</option><option>UNKNOWN</option></select></div>
+        <div><label for="limit">Maximale Zeilen</label><input id="limit" type="number" min="1" max="1000" step="1" value="100"></div>
+        <button type="submit">Filter anwenden</button>
+      </div>
+    </form>
+    <p id="timezone"></p>
+    <p id="filter-error" class="error" role="alert" hidden></p>
+    <p id="history-message" role="status">Noch keine Historie geladen.</p>
+    <p id="history-error" class="error" role="alert" hidden></p>
+    <div class="table-scroll" role="region" aria-label="Messhistorie, horizontal scrollbar" tabindex="0">
+      <table><caption>Messwerte der ausgewählten Station</caption><thead><tr>
+        <th scope="col">Stations-ID</th><th scope="col">Zeitpunkt</th><th scope="col">Wasserstand (cm)</th><th scope="col">Durchfluss (m³/s)</th><th scope="col">Niederschlag (mm/h)</th><th scope="col">Temperatur (°C)</th><th scope="col">Batterie (%)</th><th scope="col">Status</th><th scope="col">Warnstufe</th>
+      </tr></thead><tbody id="history"></tbody></table>
+    </div>
+    <p class="legend">Warnstufen: <span class="badge normal">NORMAL</span> <span class="badge warning">WARNING</span> <span class="badge critical">CRITICAL</span> <span class="badge unknown">UNKNOWN</span></p>
+  </section>
+  <p class="note">Öffentlicher, nur lesender Zugriff. Leere Zeitfelder setzen keine Zeitgrenze. Zeitangaben werden als ISO-Zeitpunkte mit UTC-Zeitzone an die API gesendet.</p>
+</main>
+</body>
+</html>

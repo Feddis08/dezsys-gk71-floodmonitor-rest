@@ -1,0 +1,35 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #fff; color: #202124; font: 16px/1.5 Arial, sans-serif; }
+main { max-width: 1440px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 1.8rem; margin: 0 0 24px; }
+h2 { font-size: 1.25rem; margin: 0 0 16px; }
+section { border: 1px solid #ccc; padding: 20px; margin-bottom: 24px; }
+.controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+label { display: block; font-weight: bold; margin-bottom: 4px; }
+input, select, button { font: inherit; padding: 7px 10px; border: 1px solid #777; border-radius: 3px; background: white; color: inherit; min-height: 40px; max-width: 100%; }
+input[type=number] { width: 130px; }
+select#station { max-width: 360px; }
+button { cursor: pointer; background: #eee; }
+button:hover { background: #ddd; }
+:focus-visible { outline: 3px solid #165ab5; outline-offset: 2px; }
+:disabled { opacity: .65; cursor: default; }
+.checkbox { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.checkbox label { margin: 0; font-weight: normal; }
+.checkbox input { min-height: auto; }
+.error { color: #921b18; background: #fff2f1; border-left: 4px solid #ad2520; padding: 10px; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
+.latest { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; margin: 0; }
+.latest dt, .latest dd { padding: 7px; border-bottom: 1px solid #ddd; margin: 0; overflow-wrap: anywhere; }
+.latest dt { font-weight: bold; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+caption { text-align: left; margin: 8px 0; }
+th, td { border: 1px solid #ccc; padding: 9px; white-space: nowrap; }
+th { background: #f2f2f2; }
+.badge { display: inline-block; border: 1px solid; border-radius: 3px; padding: 2px 7px; font-weight: bold; }
+.normal { background: #e3f2e6; color: #185529; border-color: #39824b; }
+.warning { background: #fff0d8; color: #884400; border-color: #b46100; }
+.critical { background: #ffe4e4; color: #9a1919; border-color: #b42d2d; }
+.unknown { background: #ededed; color: #444; border-color: #777; }
+.legend, .note, #timezone, #updated { font-size: .9rem; }
+@media (max-width: 600px) { main { padding: 12px; } section { padding: 12px; } .controls > div { width: 100%; } select#station { width: 100%; } .latest { grid-template-columns: 1fr 1fr; } }
